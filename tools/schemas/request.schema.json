@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "id", "created_at", "command", "args", "confirm"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "id": {"type": "string", "format": "uuid"},
+    "created_at": {"type": "string", "maxLength": 64},
+    "command": {"const": "get_status"},
+    "args": {"type": "object", "maxProperties": 0},
+    "confirm": {"const": false}
+  }
+}

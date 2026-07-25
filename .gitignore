@@ -1,0 +1,63 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+coverage.xml
+.coverage
+htmlcov/
+
+# Ruby
+.bundle/
+vendor/bundle/
+.ruby-lsp/
+
+# Build output
+build/
+dist/
+*.rbz
+*.zip
+
+# SketchUp and model files
+*.skp
+*.skb
+*.layout
+*.style
+
+# Bridge runtime data
+inbox/
+processing/
+outbox/
+errors/
+snapshots/
+exports/
+backups/
+logs/
+config/local*
+*.log
+
+# Local bridge data root if explicitly configured beneath the repository
+SketchUp Agent Control Data/
+
+# Credentials and local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+
+# Editors and operating systems
+.vscode/settings.json
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
+~*
