@@ -12,6 +12,7 @@
 
 ## Known limits
 
-- This slice deliberately omits all model inspection, capture, cleanup, export, and model-changing commands.
+- The bridge now includes two bounded read-only inspection commands: `inspect_model` and `inspect_selection`. They are packaged and covered by local Python validation but still require an in-SketchUp round-trip verification after the extension update is installed.
+- This slice deliberately omits capture, cleanup, export, and model-changing commands.
 - The extension was installed and exercised in SketchUp 2026 on a blank disposable model. The `get_status` command completed successfully; no model geometry was changed.
 - The project is licensed under MIT and its source is published. The extension still requires a manual SketchUp installation and `get_status` round-trip test before it can be claimed as working inside SketchUp.

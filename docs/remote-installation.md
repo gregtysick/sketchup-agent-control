@@ -51,11 +51,11 @@ command: python
 args: [C:\\SketchUp Agent Control\\tools\\mcp_server.py]
 ```
 
-The server exposes only `sketchup_status` at this stage. It does not open a TCP or HTTP port and does not accept generic commands.
+The server exposes `sketchup_status`, `sketchup_inspect_model`, and `sketchup_inspect_selection`. It does not open a TCP or HTTP port and does not accept generic commands.
 
 ## Upgrade and removal
 
-- Upgrade: install a later RBZ through Extension Manager, then replace the local `tools` folder from the matching release bundle.
+- Upgrade: close SketchUp, install a later RBZ through Extension Manager, replace the local `tools` folder from the matching release bundle, then reopen SketchUp.
 - Remove the extension: use Extension Manager. The bridge data remains separate so it can be retained for audit or deleted manually after review.
 - Remove bridge data: only delete `%LOCALAPPDATA%\\Beautiful Insights\\SketchUp Agent Control` after confirming it contains no logs or artifacts you need. This action is intentionally not automated.
 

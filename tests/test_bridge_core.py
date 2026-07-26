@@ -10,6 +10,10 @@ class BridgeCoreTests(unittest.TestCase):
     def test_valid_status_request(self):
         self.assertEqual(validate_request(make_request("get_status"))["command"], "get_status")
 
+    def test_valid_read_only_inspection_requests(self):
+        self.assertEqual(validate_request(make_request("inspect_model"))["command"], "inspect_model")
+        self.assertEqual(validate_request(make_request("inspect_selection"))["command"], "inspect_selection")
+
     def test_unknown_command_is_rejected(self):
         request = make_request("get_status")
         request["command"] = "eval"
@@ -19,6 +23,12 @@ class BridgeCoreTests(unittest.TestCase):
     def test_read_only_command_rejects_confirmation(self):
         request = make_request("get_status")
         request["confirm"] = True
+        with self.assertRaises(BridgeError):
+            validate_request(request)
+
+    def test_read_only_command_rejects_arguments(self):
+        request = make_request("inspect_model")
+        request["args"] = {"include_path": True}
         with self.assertRaises(BridgeError):
             validate_request(request)
 

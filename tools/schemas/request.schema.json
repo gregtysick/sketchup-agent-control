@@ -7,7 +7,7 @@
     "schema_version": {"const": 1},
     "id": {"type": "string", "format": "uuid"},
     "created_at": {"type": "string", "maxLength": 64},
-    "command": {"const": "get_status"},
+    "command": {"enum": ["get_status", "inspect_model", "inspect_selection"]},
     "args": {"type": "object", "maxProperties": 0},
     "confirm": {"const": false}
   }

@@ -2,7 +2,7 @@
 
 A local, auditable control bridge that lets AI coding agents inspect, organize, modify, and export SketchUp models.
 
-> **Status:** Read-only `get_status` bridge scaffold. No supported SketchUp-version claim or in-SketchUp verification has been completed yet.
+> **Status:** Read-only bridge, verified in SketchUp 2026 for `get_status`. `inspect_model` and `inspect_selection` are available for the next verification step.
 
 ## What this project is
 
@@ -35,8 +35,8 @@ Active SketchUp model
 
 ### Read-only foundation
 
-- Inspect model hierarchy.
-- Inspect the current selection.
+- Inspect a bounded active-model summary.
+- Inspect the current selection, including supported persistent IDs.
 - Report persistent IDs and object metadata.
 - Capture current and standard views.
 - Produce model-cleanup reports.
@@ -65,7 +65,7 @@ Active SketchUp model
 
 ## Project status
 
-The initial task is to detect the development environment, publish this repository, scaffold a valid SketchUp extension, package an RBZ, and implement a read-only `get_status` bridge.
+The initial task is to detect the development environment, publish this repository, scaffold a valid SketchUp extension, package an RBZ, and implement fixed read-only status and inspection commands.
 
 ## Separate-computer installation
 

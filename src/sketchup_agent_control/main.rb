@@ -9,7 +9,8 @@ module BeautifulInsights
   module SketchUpAgentControl
     SCHEMA_VERSION = 1
     MAX_COMMAND_BYTES = 64 * 1024
-    COMMANDS = ['get_status'].freeze
+    COMMANDS = %w[get_status inspect_model inspect_selection].freeze
+    MAX_SELECTION_ITEMS = 200
     DIRECTORIES = %w[inbox processing outbox errors snapshots exports backups logs].freeze
 
     class << self
@@ -65,7 +66,12 @@ module BeautifulInsights
         started_at = Time.now.utc.iso8601
         request = JSON.parse(File.read(path))
         validate_request!(request)
-        result = request.fetch('command') == 'get_status' ? status_result : raise('unsupported command')
+        result = case request.fetch('command')
+                 when 'get_status' then status_result
+                 when 'inspect_model' then model_result
+                 when 'inspect_selection' then selection_result
+                 else raise 'unsupported command'
+                 end
         response = response_for(request, 'completed', started_at, result, nil)
         atomic_write_json(data_root.join('outbox', File.basename(path)), response)
         File.delete(path) if File.exist?(path)
@@ -84,7 +90,7 @@ module BeautifulInsights
         raise 'unsupported schema_version' unless request['schema_version'] == SCHEMA_VERSION
         raise 'request id must be a UUID' unless valid_uuid?(request['id'])
         raise 'unsupported command' unless COMMANDS.include?(request['command'])
-        raise 'get_status does not accept arguments' unless request['args'] == {}
+        raise 'read-only commands do not accept arguments' unless request['args'] == {}
         raise 'read-only commands must use confirm: false' unless request['confirm'] == false
         raise 'request exceeds maximum command size' if JSON.generate(request).bytesize > MAX_COMMAND_BYTES
       end
@@ -92,7 +98,7 @@ module BeautifulInsights
       def status_result
         {
           'extension_name' => 'SketchUp Agent Control',
-          'extension_version' => '0.1.0',
+          'extension_version' => '0.2.0',
           'sketchup_version' => Sketchup.version,
           'ruby_version' => RUBY_VERSION,
           'platform' => Sketchup.platform,
@@ -100,6 +106,46 @@ module BeautifulInsights
           'processing_enabled' => @processing_enabled != false,
           'read_only_commands' => COMMANDS
         }
+      end
+
+      def model_result
+        model = Sketchup.active_model
+        type_counts = Hash.new(0)
+        model.entities.each { |entity| type_counts[entity.typename] += 1 }
+        units = model.options['UnitsOptions']
+        {
+          'model_name' => model.title.to_s,
+          'top_level_entity_count' => model.entities.length,
+          'top_level_entity_types' => type_counts.sort.to_h,
+          'face_count' => model.number_faces,
+          'component_definition_count' => model.definitions.length,
+          'material_count' => model.materials.length,
+          'tag_count' => model.layers.length,
+          'scene_count' => model.pages.length,
+          'active_context_depth' => model.active_path ? model.active_path.length : 0,
+          'length_unit' => length_unit_name(units['LengthUnit']),
+          'length_precision' => units['LengthPrecision']
+        }
+      end
+
+      def selection_result
+        selection = Sketchup.active_model.selection.to_a
+        items = selection.first(MAX_SELECTION_ITEMS).map do |entity|
+          item = {'type' => entity.typename}
+          item['persistent_id'] = entity.persistent_id if entity.respond_to?(:persistent_id)
+          item['name'] = entity.name.to_s if entity.respond_to?(:name) && !entity.name.to_s.empty?
+          item
+        end
+        {
+          'selection_count' => selection.length,
+          'items' => items,
+          'truncated' => selection.length > MAX_SELECTION_ITEMS,
+          'item_limit' => MAX_SELECTION_ITEMS
+        }
+      end
+
+      def length_unit_name(value)
+        {0 => 'inches', 1 => 'feet', 2 => 'millimeters', 3 => 'centimeters', 4 => 'meters'}.fetch(value, 'unknown')
       end
 
       def response_for(request, status, started_at, result, error)

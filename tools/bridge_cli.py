@@ -12,12 +12,13 @@ from bridge_core import BridgeError, BridgePaths, default_data_root, make_reques
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="SketchUp Agent Control local bridge client")
-    parser.add_argument("command", choices=("status",))
+    parser.add_argument("command", choices=("status", "inspect-model", "inspect-selection"))
     parser.add_argument("--data-root", type=Path, default=default_data_root())
     parser.add_argument("--timeout", type=float, default=15.0)
     args = parser.parse_args()
     try:
-        request = make_request("get_status")
+        command = {"status": "get_status", "inspect-model": "inspect_model", "inspect-selection": "inspect_selection"}[args.command]
+        request = make_request(command)
         paths = BridgePaths(args.data_root.resolve())
         submit(paths, request)
         response = wait_for_response(paths, request["id"], args.timeout)

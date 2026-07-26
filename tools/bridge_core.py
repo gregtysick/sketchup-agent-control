@@ -16,7 +16,7 @@ from typing import Any
 
 SCHEMA_VERSION = 1
 MAX_COMMAND_BYTES = 64 * 1024
-READ_ONLY_COMMANDS = frozenset({"get_status"})
+READ_ONLY_COMMANDS = frozenset({"get_status", "inspect_model", "inspect_selection"})
 DIRECTORIES = ("inbox", "processing", "outbox", "errors", "snapshots", "exports", "backups", "logs")
 
 
@@ -62,7 +62,7 @@ def validate_request(request: Any) -> dict[str, Any]:
     if request["command"] not in READ_ONLY_COMMANDS:
         raise BridgeError("unsupported command")
     if not isinstance(request["args"], dict) or request["args"]:
-        raise BridgeError("get_status does not accept arguments")
+        raise BridgeError("read-only commands do not accept arguments")
     if request["confirm"] is not False:
         raise BridgeError("read-only commands must use confirm: false")
     if not isinstance(request["created_at"], str) or len(request["created_at"]) > 64:
