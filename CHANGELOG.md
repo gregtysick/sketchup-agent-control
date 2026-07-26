@@ -6,6 +6,7 @@ All notable changes to SketchUp Agent Control are documented here.
 
 ### Added
 
+- Confirmed `create_test_cube` command: exactly one 10-foot cube at the model origin, with a local backup and one SketchUp Undo operation.
 - Read-only `inspect_model` and `inspect_selection` commands, with bounded selection output and persistent IDs where supported.
 - Matching CLI commands and MCP tools: `sketchup_inspect_model` and `sketchup_inspect_selection`.
 - MIT license.

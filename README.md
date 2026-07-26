@@ -44,6 +44,7 @@ Active SketchUp model
 
 ### Controlled operations after review
 
+- Create one confirmed 10-foot test cube at the model origin, with a local backup and one SketchUp Undo operation.
 - Rename and organize groups and components.
 - Create groups or components from an explicit selection.
 - Assign tags correctly to model objects.

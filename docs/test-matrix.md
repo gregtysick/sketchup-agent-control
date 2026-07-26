@@ -14,3 +14,5 @@
 | RBZ inspection update | Rebuild archive with the inspection extension source | passed | archive lists only the required extension files, 2026-07-25 |
 | Model inspection | `inspect_model` against an open SketchUp model | pending manual verification | requires extension upgrade and open model |
 | Selection inspection | `inspect_selection` against an open SketchUp model | pending manual verification | requires extension upgrade and open model |
+| Confirmed test cube | `create_test_cube` validates fixed size and confirmation before queue submission | passed locally | 10 Python tests, 2026-07-26 |
+| Confirmed test cube | Creates backup, one undo operation, and a grouped 10-foot cube | pending in-SketchUp verification | extension 0.3.0 installed locally; restart required |

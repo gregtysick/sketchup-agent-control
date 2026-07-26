@@ -7,8 +7,13 @@
     "schema_version": {"const": 1},
     "id": {"type": "string", "format": "uuid"},
     "created_at": {"type": "string", "maxLength": 64},
-    "command": {"enum": ["get_status", "inspect_model", "inspect_selection"]},
-    "args": {"type": "object", "maxProperties": 0},
-    "confirm": {"const": false}
-  }
+    "command": {"enum": ["get_status", "inspect_model", "inspect_selection", "create_test_cube"]},
+    "args": {"type": "object"},
+    "confirm": {"type": "boolean"}
+  },
+  "allOf": [{
+    "if": {"properties": {"command": {"const": "create_test_cube"}}},
+    "then": {"properties": {"args": {"const": {"side_inches": 120}}, "confirm": {"const": true}}},
+    "else": {"properties": {"args": {"maxProperties": 0}, "confirm": {"const": false}}}
+  }]
 }

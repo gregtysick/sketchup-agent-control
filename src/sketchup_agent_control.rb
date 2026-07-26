@@ -15,7 +15,7 @@ unless file_loaded?(__FILE__)
     'sketchup_agent_control/main'
   )
   extension.description = 'A local, auditable bridge for controlled SketchUp agent actions.'
-  extension.version = '0.2.0'
+  extension.version = '0.3.0'
   extension.creator = 'Beautiful Insights'
   Sketchup.register_extension(extension, true)
   file_loaded(__FILE__)

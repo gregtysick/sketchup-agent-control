@@ -9,7 +9,9 @@ module BeautifulInsights
   module SketchUpAgentControl
     SCHEMA_VERSION = 1
     MAX_COMMAND_BYTES = 64 * 1024
-    COMMANDS = %w[get_status inspect_model inspect_selection].freeze
+    READ_ONLY_COMMANDS = %w[get_status inspect_model inspect_selection].freeze
+    WRITE_COMMANDS = %w[create_test_cube].freeze
+    COMMANDS = (READ_ONLY_COMMANDS + WRITE_COMMANDS).freeze
     MAX_SELECTION_ITEMS = 200
     DIRECTORIES = %w[inbox processing outbox errors snapshots exports backups logs].freeze
 
@@ -70,6 +72,7 @@ module BeautifulInsights
                  when 'get_status' then status_result
                  when 'inspect_model' then model_result
                  when 'inspect_selection' then selection_result
+                 when 'create_test_cube' then create_test_cube_result
                  else raise 'unsupported command'
                  end
         response = response_for(request, 'completed', started_at, result, nil)
@@ -90,21 +93,27 @@ module BeautifulInsights
         raise 'unsupported schema_version' unless request['schema_version'] == SCHEMA_VERSION
         raise 'request id must be a UUID' unless valid_uuid?(request['id'])
         raise 'unsupported command' unless COMMANDS.include?(request['command'])
-        raise 'read-only commands do not accept arguments' unless request['args'] == {}
-        raise 'read-only commands must use confirm: false' unless request['confirm'] == false
+        if READ_ONLY_COMMANDS.include?(request['command'])
+          raise 'read-only commands do not accept arguments' unless request['args'] == {}
+          raise 'read-only commands must use confirm: false' unless request['confirm'] == false
+        elsif request['command'] == 'create_test_cube'
+          raise 'create_test_cube requires confirm: true' unless request['confirm'] == true
+          raise 'create_test_cube requires exactly side_inches: 120' unless request['args'] == {'side_inches' => 120}
+        end
         raise 'request exceeds maximum command size' if JSON.generate(request).bytesize > MAX_COMMAND_BYTES
       end
 
       def status_result
         {
           'extension_name' => 'SketchUp Agent Control',
-          'extension_version' => '0.2.0',
+          'extension_version' => '0.3.0',
           'sketchup_version' => Sketchup.version,
           'ruby_version' => RUBY_VERSION,
           'platform' => Sketchup.platform,
           'bridge_root' => data_root.to_s,
           'processing_enabled' => @processing_enabled != false,
-          'read_only_commands' => COMMANDS
+          'read_only_commands' => READ_ONLY_COMMANDS,
+          'write_commands' => WRITE_COMMANDS
         }
       end
 
@@ -146,6 +155,37 @@ module BeautifulInsights
 
       def length_unit_name(value)
         {0 => 'inches', 1 => 'feet', 2 => 'millimeters', 3 => 'centimeters', 4 => 'meters'}.fetch(value, 'unknown')
+      end
+
+      def create_test_cube_result
+        model = Sketchup.active_model
+        backup_path = data_root.join('backups', "pre-create-test-cube-#{Time.now.utc.strftime('%Y%m%dT%H%M%SZ')}.skp")
+        raise 'backup copy failed; model was not changed' unless model.save_copy(backup_path.to_s)
+
+        operation_started = false
+        begin
+          raise 'could not start SketchUp undo operation' unless model.start_operation('SketchUp Agent Control: Create 10ft Test Cube', true)
+          operation_started = true
+          group = model.entities.add_group
+          group.name = 'Agent Test Cube - 10ft'
+          side = 120.0
+          face = group.entities.add_face([0, 0, 0], [side, 0, 0], [side, side, 0], [0, side, 0])
+          raise 'could not create cube base face' unless face
+          face.pushpull(-side)
+          raise 'could not create a solid test cube' unless group.entities.grep(Sketchup::Face).length == 6
+          raise 'could not commit SketchUp undo operation' unless model.commit_operation
+          operation_started = false
+          {
+            'created_entity' => {'type' => group.typename, 'persistent_id' => group.persistent_id, 'name' => group.name},
+            'side_inches' => 120,
+            'side_feet' => 10,
+            'backup_path' => backup_path.to_s,
+            'undo_operation' => 'SketchUp Agent Control: Create 10ft Test Cube'
+          }
+        rescue StandardError
+          model.abort_operation if operation_started
+          raise
+        end
       end
 
       def response_for(request, status, started_at, result, error)

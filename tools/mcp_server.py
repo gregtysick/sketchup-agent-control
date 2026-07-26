@@ -11,7 +11,7 @@ from pathlib import Path
 
 from bridge_core import BridgeError, BridgePaths, default_data_root, make_request, submit, wait_for_response
 
-SERVER_INFO = {"name": "sketchup-agent-control", "version": "0.2.0"}
+SERVER_INFO = {"name": "sketchup-agent-control", "version": "0.3.0"}
 
 
 def respond(identifier, result=None, error=None):
@@ -32,6 +32,7 @@ def handle(message: dict) -> None:
             {"name": "sketchup_status", "description": "Return bridge and SketchUp status from the open extension.", "inputSchema": schema},
             {"name": "sketchup_inspect_model", "description": "Read a bounded summary of the active SketchUp model without changing it.", "inputSchema": schema},
             {"name": "sketchup_inspect_selection", "description": "Read the current SketchUp selection without changing it.", "inputSchema": schema},
+            {"name": "sketchup_create_test_cube", "description": "Create exactly one 10-foot test cube at the model origin. Creates a local backup and one Undo operation.", "inputSchema": {"type": "object", "properties": {"confirm": {"const": True}}, "required": ["confirm"], "additionalProperties": False}},
         ]})
     elif method == "tools/call":
         params = message.get("params", {})
@@ -39,6 +40,7 @@ def handle(message: dict) -> None:
             "sketchup_status": "get_status",
             "sketchup_inspect_model": "inspect_model",
             "sketchup_inspect_selection": "inspect_selection",
+            "sketchup_create_test_cube": "create_test_cube",
         }
         command = command_by_tool.get(params.get("name"))
         if command is None:
@@ -47,7 +49,7 @@ def handle(message: dict) -> None:
         timeout = params.get("arguments", {}).get("timeout_seconds", 15.0)
         try:
             paths = BridgePaths(default_data_root().resolve())
-            request = make_request(command)
+            request = make_request(command, {"side_inches": 120}, True) if command == "create_test_cube" else make_request(command)
             submit(paths, request)
             result = wait_for_response(paths, request["id"], float(timeout))
             respond(identifier, {"content": [{"type": "text", "text": json.dumps(result, indent=2)}], "isError": result.get("status") != "completed"})

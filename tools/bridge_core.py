@@ -17,6 +17,7 @@ from typing import Any
 SCHEMA_VERSION = 1
 MAX_COMMAND_BYTES = 64 * 1024
 READ_ONLY_COMMANDS = frozenset({"get_status", "inspect_model", "inspect_selection"})
+WRITE_COMMANDS = frozenset({"create_test_cube"})
 DIRECTORIES = ("inbox", "processing", "outbox", "errors", "snapshots", "exports", "backups", "logs")
 
 
@@ -59,12 +60,17 @@ def validate_request(request: Any) -> dict[str, Any]:
         uuid.UUID(request["id"])
     except (ValueError, TypeError, AttributeError) as exc:
         raise BridgeError("id must be a UUID") from exc
-    if request["command"] not in READ_ONLY_COMMANDS:
+    if request["command"] not in READ_ONLY_COMMANDS | WRITE_COMMANDS:
         raise BridgeError("unsupported command")
-    if not isinstance(request["args"], dict) or request["args"]:
-        raise BridgeError("read-only commands do not accept arguments")
-    if request["confirm"] is not False:
-        raise BridgeError("read-only commands must use confirm: false")
+    if request["command"] in READ_ONLY_COMMANDS:
+        if not isinstance(request["args"], dict) or request["args"]:
+            raise BridgeError("read-only commands do not accept arguments")
+        if request["confirm"] is not False:
+            raise BridgeError("read-only commands must use confirm: false")
+    elif request["args"] != {"side_inches": 120}:
+        raise BridgeError("create_test_cube requires exactly side_inches: 120")
+    elif request["confirm"] is not True:
+        raise BridgeError("create_test_cube requires confirm: true")
     if not isinstance(request["created_at"], str) or len(request["created_at"]) > 64:
         raise BridgeError("created_at must be a bounded ISO-8601 string")
     encoded = json.dumps(request, separators=(",", ":")).encode("utf-8")
@@ -73,14 +79,14 @@ def validate_request(request: Any) -> dict[str, Any]:
     return request
 
 
-def make_request(command: str) -> dict[str, Any]:
+def make_request(command: str, args: dict[str, Any] | None = None, confirm: bool = False) -> dict[str, Any]:
     return {
         "schema_version": SCHEMA_VERSION,
         "id": str(uuid.uuid4()),
         "created_at": utc_now(),
         "command": command,
-        "args": {},
-        "confirm": False,
+        "args": args if args is not None else {},
+        "confirm": confirm,
     }
 
 
